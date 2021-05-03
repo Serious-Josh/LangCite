@@ -1,98 +1,108 @@
-from django.db import models
 from django.contrib.auth.models import User
-import jsonfield
-from django.urls import reverse
+from django.db import models
 
 
 # Languages table
-class Language(models.Model):
+class Languages(models.Model):
+    language_id = models.AutoField
     language_name = models.CharField(max_length=20)
-
-    def __str__(self):
-        return self.language_name
 
 
 # Genres table
-class Genre(models.Model):
+class Genres(models.Model):
+    genre_id = models.AutoField
     genre_name = models.CharField(max_length=10)
 
-    def __str__(self):
-        return self.genre_name
 
+# steps to import lessons stuff
+# ---the user imports the file
+# (this part I'm a bit iffy on, will clarify later)
+# --check if words are in database
+#    - if so, then easy translate them
+#    - if not, after easy translation, grab from google translate api, add to database and to json
+# ---save the json file to imports
+# ---create new lesson entry in the db using the json, and the user provided info
 
 # Lessons table
-class Lesson(models.Model):
-    lesson_title = models.CharField(max_length=255)
+class Lessons(models.Model):
+    lesson_id = models.AutoField
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    language_id = models.ForeignKey(Language, on_delete=models.CASCADE)
-    genre_id = models.ForeignKey(Genre, on_delete=models.CASCADE)
-    public = models.BooleanField(default=True)
+    language_id = models.ForeignKey(Languages, on_delete=models.CASCADE)
+    genre_id = models.ForeignKey(Genres, on_delete=models.CASCADE)
+    public = models.BooleanField
     # this json_file contains both original text and translated text
-    json_file = jsonfield.JSONField()
-
-    # displays title and user in the admin section
-    def __str__(self):
-        return self.lesson_title + ' | ' + str(self.user_id)
-
-    # returns to lessons page
-    def get_absolute_url(self):
-        return reverse('web-lessons')
+    json_file = models.FileField
 
 
 # English word list
-class EnglishWord(models.Model):
-    word = models.CharField(max_length=20, default="none")
-    definition = models.TextField(max_length=20, default="none")
-    word_class = models.CharField(max_length=20, default="none")
-    pron = models.CharField(max_length=20, default="none")
-
-    def __str__(self):
-        return self.word
-    # Russian word list
+class EnglishWords(models.Model):
+    word_id = models.AutoField
+    word = models.CharField
+    definition = models.TextField
+    word_class = models.CharField
+    pron = models.CharField
 
 
-class RussianWord(models.Model):
-    word = models.CharField(max_length=20, default="none")
-    definition = models.TextField(max_length=20, default="none")
-    word_class = models.CharField(max_length=20, default="none")
-    pron = models.CharField(max_length=20, default="none")
-
-    def __str__(self):
-        return self.word
-
-    # French word list
+# Russian word list
+class RussianWords(models.Model):
+    word_id = models.AutoField
+    word = models.CharField
+    definition = models.TextField
+    word_class = models.CharField
+    pron = models.CharField
 
 
-class FrenchWord(models.Model):
-    word = models.CharField(max_length=20, default="none")
-    definition = models.TextField(max_length=20, default="none")
-    word_class = models.CharField(max_length=20, default="none")
-    pron = models.CharField(max_length=20, default="none")
-
-    def __str__(self):
-        return self.word
+# French word list
+class FrenchWords(models.Model):
+    word_id = models.AutoField
+    word = models.CharField
+    definition = models.TextField
+    word_class = models.CharField
+    pron = models.CharField
 
 
 # Spanish word list
-class SpanishWord(models.Model):
-    word = models.CharField(max_length=20, default="none")
-    definition = models.TextField(max_length=20, default="none")
-    word_class = models.CharField(max_length=20, default="none")
-    pron = models.CharField(max_length=20, default="none")
-
-    def __str__(self):
-        return self.word
+class SpanishWords(models.Model):
+    word_id = models.AutoField
+    word = models.CharField
+    definition = models.TextField
+    word_class = models.CharField
+    pron = models.CharField
 
 
 # technically these dictionary tables are "above" the word lists in the hierarchy, but they have to be first since
 # they need references to the word lists
 # English dictionary
-class Tdictionary(models.Model):
+class ENDictionary(models.Model):
     translation_id = models.AutoField
-    en_id = models.ForeignKey(EnglishWord, on_delete=models.CASCADE, related_name="lang1")
-    spa_id = models.ForeignKey(SpanishWord, on_delete=models.CASCADE, related_name="lang2")
-    ru_id = models.ForeignKey(RussianWord, on_delete=models.CASCADE, related_name="lang3")
-    fr_id = models.ForeignKey(FrenchWord, on_delete=models.CASCADE, related_name="lang4")
+    word_id = models.ForeignKey(EnglishWords, on_delete=models.CASCADE)
+    lang_1 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="en_lang1")
+    lang_2 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="en_lang2")
+    lang_3 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="en_lang3")
 
-    def __str__(self):
-        return self.translation_id
+
+# Russian dictionary
+class RUDictionary(models.Model):
+    translation_id = models.AutoField
+    word_id = models.ForeignKey(RussianWords, on_delete=models.CASCADE)
+    lang_1 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="ru_lang1")
+    lang_2 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="ru_lang2")
+    lang_3 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="ru_lang3")
+
+
+# French dictionary
+class FRDictionary(models.Model):
+    translation_id = models.AutoField
+    word_id = models.ForeignKey(FrenchWords, on_delete=models.CASCADE)
+    lang_1 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="fr_lang1")
+    lang_2 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="fr_lang2")
+    lang_3 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="fr_lang3")
+
+
+# Spanish dictionary
+class SPADictionary(models.Model):
+    translation_id = models.AutoField
+    word_id = models.ForeignKey(SpanishWords, on_delete=models.CASCADE)
+    lang_1 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="spa_lang1")
+    lang_2 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="spa_lang2")
+    lang_3 = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name="spa_lang3")
